@@ -14,7 +14,9 @@ const url = 'https://www.zhihu.com/question/378458788/answer/1071475998';
 
     const questionArray = await findAllItems();
 
-    questionArray.forEach(r=>{
+    const twenty = questionArray.splice(0, 20)
+
+    twenty.forEach(r=>{
         // const r = questionArray[0]
         const url = r.getDataValue('url')
         openQuestionPage(browser, url)

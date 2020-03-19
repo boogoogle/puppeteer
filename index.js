@@ -17,9 +17,11 @@ let items = [];
 let currentIndex = 0; // 已记录地址的热榜项目索引值
 let objList = [];
 let currentQuesObj = {};
+let specialNum = 0;
+let questionNum = 0;
 (async () => {
   const browser = await puppeteer.launch({
-    // headless: false, // 关闭无头模式
+    headless: false, // 关闭无头模式
     ignoreHTTPSErrors: true,
     // dumpio: true, // 将浏览器进程标准输出和标准错误输入到 process.stdout 和 process.stderr 中
     timeout: 0,//等待浏览器实例启动的最长时间（以毫秒为单位）。默认是 30000 (30 秒). 通过 0 来禁用超时。
@@ -38,19 +40,23 @@ let currentQuesObj = {};
             currentQuesObj.url = 'https://www.zhihu.com/question/' + questionId
             try{
               saveHotItem(currentQuesObj) // 数据入库
-              fs.mkdir('./imgs/'+questionId)// 创建对应的图片文件夹
+              console.log('after savetoId')
+              fs.mkdir('./imgs/'+questionId, (e)=>{console.log(e)})// 创建对应的图片文件夹
               objList.push(currentQuesObj)
               currentIndex += 1
+              questionNum += 1
               currentQuesObj = {}
               // await currentPage.close()
               getQuestionIdFromBillboard(); 
             } catch (err) {
+              console.error('err------>',err)
               browser.close();
             } 
           }
         }
         if(utils.isSpecial(url)){
             currentIndex += 1
+            specialNum +=1
             currentQuesObj = {}
             await currentPage.close()
             getQuestionIdFromBillboard(); 
@@ -62,8 +68,9 @@ let currentQuesObj = {};
           timeout: 0
         })
         items = await currentPage.$$('.App-main .HotList-item') // 拿到所有该类名的元素
+        console.log(items.length, currentIndex)
         if(!items[currentIndex]) {
-          console.log('---热榜扫描结束, 共',items.length, '条---')
+          console.log('---热榜扫描结束, 共',questionNum, '条热搜---', specialNum,'条special链接')
           browser.close()
           return
         }
@@ -71,7 +78,6 @@ let currentQuesObj = {};
           return s.textContent
         })
         currentQuesObj.title=st;
-        console.log(st)
         await items[currentIndex].click()
       }
       getQuestionIdFromBillboard()

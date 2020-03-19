@@ -37,7 +37,7 @@ let currentQuesObj = {};
             currentQuesObj.id = questionId
             currentQuesObj.url = 'https://www.zhihu.com/question/' + questionId
             try{
-              await saveHotItem(currentQuesObj) // 数据入库
+              saveHotItem(currentQuesObj) // 数据入库
               fs.mkdir('./imgs/'+questionId)// 创建对应的图片文件夹
               objList.push(currentQuesObj)
               currentIndex += 1
@@ -71,6 +71,7 @@ let currentQuesObj = {};
           return s.textContent
         })
         currentQuesObj.title=st;
+        console.log(st)
         await items[currentIndex].click()
       }
       getQuestionIdFromBillboard()

@@ -30,7 +30,7 @@ HotItem.init({
   // options
 });
 
-HotItem.sync()
+// HotItem.sync()
 
 async function saveHotItem(item={
     id: 0,
@@ -42,19 +42,22 @@ async function saveHotItem(item={
     if(question && question.id) { // 
       if(question.title !== item.title) {
         item.title = question.title + '|>>|' + item.title
+        HotItem.update(item, {
+          where: {
+            id:item.id
+          },
+          fields: ['title']
+        })
       }
-      HotItem.update(item, {
-        where: {
-          id:item.id
-        },
-        fields: ['title']
+      console.log('问题已存在', item.title)
+    } else {
+      HotItem.create(item).then(ht=>{ // 这里用upsert不大合适
+        console.info('success', ht.title)
+      }).catch(e=>{
+        console.error(e)
       })
     }
-    HotItem.create(item).then(ht=>{ // 这里用upsert不大合适
-        console.info('success', ht.title)
-    }).catch(e=>{
-      console.error(e)
-    })
+    
 }
 async function findAllItems() {
   return HotItem.findAll({

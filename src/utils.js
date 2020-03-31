@@ -1,3 +1,4 @@
+const qs = require('querystring');
 class Utils{
     isQuestion(url){
         return url.indexOf('question') > -1
@@ -19,8 +20,9 @@ class Utils{
         const p = url.match(regexp)[0] // 'question/378458788', 因为列表中可能有special/34847855这种主题内容
         return p.split('/') [1]
     }
-    async scroll(page, distance) {
-    }
-}
 
-module.exports = new Utils()
+    
+}
+let utils = new Utils()
+
+module.exports = utils

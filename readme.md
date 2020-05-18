@@ -25,3 +25,11 @@ fs.mkdir('/tmp/a/apple', { recursive: true }, (err) => {
 });
 
   ```
+
+
+
+### 使用步骤
+1. 启动docker, docker run mysql101(这是本机mysql容器)
+2. node run index.js
+
+

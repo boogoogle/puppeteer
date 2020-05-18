@@ -21,7 +21,7 @@ let specialNum = 0;
 let questionNum = 0;
 (async () => {
   const browser = await puppeteer.launch({
-    headless: false, // 关闭无头模式
+    // headless: false, // 关闭无头模式
     ignoreHTTPSErrors: true,
     // dumpio: true, // 将浏览器进程标准输出和标准错误输入到 process.stdout 和 process.stderr 中
     timeout: 0,//等待浏览器实例启动的最长时间（以毫秒为单位）。默认是 30000 (30 秒). 通过 0 来禁用超时。
@@ -41,7 +41,7 @@ let questionNum = 0;
             try{
               saveHotItem(currentQuesObj) // 数据入库
               console.log('after savetoId')
-              fs.mkdir('./imgs/'+questionId, (e)=>{console.log(e)})// 创建对应的图片文件夹
+              fs.mkdir('./imgs/'+questionId, (e)=>{console.error(e)})// 创建对应的图片文件夹
               objList.push(currentQuesObj)
               currentIndex += 1
               questionNum += 1
@@ -64,7 +64,7 @@ let questionNum = 0;
       })
       async function getQuestionIdFromBillboard(){
         currentPage = await browser.newPage()
-        await currentPage.goto(billboard,{
+        await currentPage.goto(billboard,{ // 在billboard拿不到questionId,所以只能每次都从billboard点击每个问题
           timeout: 0
         })
         items = await currentPage.$$('.App-main .HotList-item') // 拿到所有该类名的元素

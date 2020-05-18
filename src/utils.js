@@ -4,7 +4,7 @@ class Utils{
         return url.indexOf('question') > -1
     }
     isSpecial(url){
-        return url.indexOf('special') > -1
+        return !this.isQuestion(url) && url.indexOf('billboard') < 0
     }
     parseQuestionNumber(url){
         const regexp = /question\/\d+/
@@ -20,8 +20,6 @@ class Utils{
         const p = url.match(regexp)[0] // 'question/378458788', 因为列表中可能有special/34847855这种主题内容
         return p.split('/') [1]
     }
-
-    
 }
 let utils = new Utils()
 

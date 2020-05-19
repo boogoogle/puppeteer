@@ -10,9 +10,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "leancloud-storage": "^4.5.3",
     "mysql2": "^2.1.0",
     "puppeteer": "^2.1.1",
     "sequelize": "^5.21.5",
     "superagent": "^5.2.2"
+  },
+  "devDependencies": {
+    "chalk": "^4.0.0",
+    "log": "^6.0.0"
   }
 }

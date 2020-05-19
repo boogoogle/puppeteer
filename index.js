@@ -9,19 +9,25 @@
 const fs = require('fs');
 const puppeteer = require('puppeteer');
 const utils = require('./src/utils');
-const { saveHotItem } = require("./sql/models/hot");
+const {logInfo} = require('./logger');
+const lcBrdige = require('./sql/lc-bridge')
+// const { saveHotItem } = lcBrdige; // 存储到leancloud
+const { saveHotItem } = require("./sql/models/hot");// 本地mysql
+
+const {collectAnswerWithSingleBrowser} = require("./screenshot");
+
 const questionIdArray = [];
 const billboard = 'https://www.zhihu.com/billboard';
 let currentPage = null;
 let items = [];
 let currentIndex = 0; // 已记录地址的热榜项目索引值
-let objList = [];
+let billBoardItems = []; // 把当前热榜的所有问题地址存起来
 let currentQuesObj = {};
 let specialNum = 0;
 let questionNum = 0;
 (async () => {
   const browser = await puppeteer.launch({
-    // headless: false, // 关闭无头模式
+    headless: false, // 关闭无头模式
     ignoreHTTPSErrors: true,
     // dumpio: true, // 将浏览器进程标准输出和标准错误输入到 process.stdout 和 process.stderr 中
     timeout: 0,//等待浏览器实例启动的最长时间（以毫秒为单位）。默认是 30000 (30 秒). 通过 0 来禁用超时。
@@ -33,6 +39,7 @@ let questionNum = 0;
         // console.log(url)
         if(utils.isQuestion(url)){
           const questionId = utils.parseQuestionNumber(url)
+
           // console.log(currentIndex,target._targetInfo)
           if(questionIdArray.indexOf(questionId === -1)) {
             questionIdArray.push(questionId)
@@ -40,13 +47,13 @@ let questionNum = 0;
             currentQuesObj.url = 'https://www.zhihu.com/question/' + questionId
             try{
               saveHotItem(currentQuesObj) // 数据入库
-              console.log('after savetoId')
+              // console.log('after savetoId')
               fs.mkdir('./imgs/'+questionId, (e)=>{console.error(e)})// 创建对应的图片文件夹
-              objList.push(currentQuesObj)
+              billBoardItems.push(currentQuesObj)
               currentIndex += 1
               questionNum += 1
               currentQuesObj = {}
-              // await currentPage.close()
+              await currentPage.close()
               getQuestionIdFromBillboard(); 
             } catch (err) {
               console.error('err------>',err)
@@ -70,8 +77,14 @@ let questionNum = 0;
         items = await currentPage.$$('.App-main .HotList-item') // 拿到所有该类名的元素
         console.log(items.length, currentIndex)
         if(!items[currentIndex]) {
-          console.log('---热榜扫描结束, 共',questionNum, '条热搜---', specialNum,'条special链接')
+        // if(currentIndex > 1) {
           browser.close()
+          console.log('---热榜扫描结束, 共',questionNum, '条热搜---', specialNum,'条special链接')
+          logInfo(' - -< <<<< 现在开始收集答案截图 -->>>>> >- - ', billBoardItems.length)
+          
+          billBoardItems.forEach(o => {
+            collectAnswerWithSingleBrowser(o.url)
+          })
           return
         }
         const st = await items[currentIndex].$eval('.HotList-itemTitle',s=>{ // 使用$eval 获取dom元素,并拿到想要的内容

@@ -2,8 +2,12 @@ const puppeteer = require('puppeteer');
 const {findAllItems} = require('./sql/models/hot');
 const {parseQuestionNumber,parseAnswerNumber} = require('./src/utils')
 const url = 'https://www.zhihu.com/question/378458788/answer/1071475998';
+const {logError, logInfo, log} = require('./logger');
 
-
+const constant = {
+    openedBrowserNum: 0,
+    closedBrowserNum: 0
+}
 (async () => {
     const browser = await puppeteer.launch({
         // headless: false, // 关闭无头模式
@@ -14,12 +18,12 @@ const url = 'https://www.zhihu.com/question/378458788/answer/1071475998';
 
     const questionArray = await findAllItems();
 
-    const twenty = questionArray.splice(0, 20)
+    const twenty = questionArray.splice(0, 40)
 
     twenty.forEach(r=>{
         // const r = questionArray[0]
         const url = r.getDataValue('url')
-        openQuestionPage(browser, url)
+        collectAnswerWithSingleBrowser(url)
         // fs.mkdir('../imgs/'+id,{ recursive: true }, (err)=>{
         // if(err){
         //     throw err
@@ -27,6 +31,33 @@ const url = 'https://www.zhihu.com/question/378458788/answer/1071475998';
         // })
     })  
 })()
+
+async function collectAnswerWithSingleBrowser(url){
+    const browser = await puppeteer.launch({
+        // headless: false, // 关闭无头模式
+        ignoreHTTPSErrors: true,
+        // dumpio: true, // 将浏览器进程标准输出和标准错误输入到 process.stdout 和 process.stderr 中
+        timeout: 0,//等待浏览器实例启动的最长时间（以毫秒为单位）。默认是 30000 (30 秒). 通过 0 来禁用超时。
+    })
+    constant.openedBrowserNum += 1
+    browser.on('targetdestroyed', async(target) => {
+        const pages = await browser.pages()
+        logInfo("pages.length -> ", pages.length)
+        if(!pages || pages.length <= 2) {
+            browser.close()
+            constant.closedBrowserNum += 1
+            constant.openedBrowserNum -= 1
+            logConstant()
+        }
+
+    })
+    openQuestionPage(browser, url)
+}
+function logConstant(){
+    log.blue(`已打开${constant.openedBrowserNum}个浏览器`)
+    log.blue(`已回收${constant.closedBrowserNum}个浏览器`)
+}
+
 
 async function openQuestionPage(browser,url){
     try{
@@ -37,11 +68,13 @@ async function openQuestionPage(browser,url){
         await page.evaluate(() => {
             const se = document.scrollingElement || document.body.scrollingElement;
             const bodyH = document.body.offsetHeight
-            se.scrollTop = bodyH
+            se.scrollTop = bodyH * 2
         })
 
         // 拿到每条回答的列表
         const listItems = await page.$$('.List-item')
+        log.yellow("listItems.length ->",listItems.length )
+        log.yellow("url ->", url)
         listItems.forEach(async li=>{
             try {
                 const meta = await li.$('.AnswerItem > meta[itemprop=url]')
@@ -50,21 +83,19 @@ async function openQuestionPage(browser,url){
                 const answerUrl = await jsHandle.jsonValue()
                 shotOneAnswer(browser, answerUrl)
             } catch (err) {
-                console.log('---------err-----------',url)
-                console.log(err)
-                console.log('---------err-----------',answerUrl)
+                logError('---------err-----------',url)
+                logError(err)
+                logError('---------err-----------',answerUrl)
             }
             
         })
         // page.close()
     }catch(err){
-        
-    }
-    
+    } 
 }
 
 async function shotOneAnswer(browser, url){
-    console.log('-----answerUrl-------',url)
+    // logError('-----answerUrl-------',url)
     // return
     const questionId = parseQuestionNumber(url)
     const answerId = parseAnswerNumber(url)
@@ -94,4 +125,8 @@ async function shotOneAnswer(browser, url){
         clip: b
     })
     page.close();
+}
+
+module.exports = {
+    collectAnswerWithSingleBrowser
 }
